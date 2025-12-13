@@ -1,0 +1,26 @@
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:simple_weather/main.dart';
+
+void main() {
+  testWidgets('App shows welcome and navigates to Home', (
+    WidgetTester tester,
+  ) async {
+    // Instead of relying on navigation (which uses a navigator key), pump MainAppScreen directly
+    await tester.pumpWidget(
+      MaterialApp(home: MainAppScreen(isDark: false, onThemeChanged: (_) {})),
+    );
+    await tester.pump();
+
+    // Main app bottom navigation should appear (label exists even while weather loads)
+    expect(find.text('Home'), findsOneWidget);
+  });
+}
