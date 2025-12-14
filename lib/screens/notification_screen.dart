@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/weather_model.dart';
+import '../services/notification_service.dart';
 
 class NotificationScreen extends StatelessWidget {
   final VoidCallback onBack;
@@ -124,6 +125,25 @@ class NotificationScreen extends StatelessWidget {
                         size: 36,
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      if (weather != null) {
+                        NotificationService().showWeatherNotification(weather!);
+                      } else {
+                        NotificationService().showInAppNotification(
+                          title: 'Cuaca Hari Ini',
+                          body:
+                              'Periksa halaman utama untuk detail cuaca di lokasi Anda.',
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.notifications),
+                    label: const Text('Tampilkan Notifikasi'),
                   ),
                 ),
                 const SizedBox(height: 18),

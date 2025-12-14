@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_weather/screens/weather_home_screen.dart';
 import 'package:simple_weather/services/weather_service.dart';
+import 'package:simple_weather/models/weather_model.dart';
 
 class _FakeWeatherService extends WeatherService {
   @override
@@ -48,7 +49,7 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     // Open city selection dialog
     await tester.tap(find.byKey(const Key('location_button')));

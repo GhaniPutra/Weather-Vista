@@ -1,5 +1,7 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:overlay_support/overlay_support.dart';
+import 'services/notification_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // screens
@@ -10,8 +12,10 @@ import 'screens/settings_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/welcome_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
+  runApp(OverlaySupport.global(child: const MyApp()));
 }
 
 /// Gradient global

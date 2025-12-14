@@ -10,6 +10,7 @@ import '../widgets/hourly_weather_card.dart';
 import '../widgets/seven_day_row.dart';
 import '../services/weather_service.dart';
 import '../models/weather_model.dart';
+import '../services/notification_service.dart';
 
 class WeatherHomeScreen extends StatefulWidget {
   final ValueChanged<WeatherModel>? onWeatherChanged;
@@ -466,6 +467,11 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
                             );
                             widget.onLocationChanged?.call(_currentLocation);
                           }
+                          // show an in-app and system weather notification
+                          // (WhatsApp-like banner + optional system notification)
+                          NotificationService().showWeatherNotification(
+                            weather,
+                          );
                         });
                       }
                       return Stack(
