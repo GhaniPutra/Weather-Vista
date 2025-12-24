@@ -64,7 +64,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'VSTA',
+                      'VISTA',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF22343D),
