@@ -1,10 +1,3 @@
-## 📸 Preview Aplikasi
-
-[![Download APK](https://img.shields.io/badge/Download-APK-blue?logo=android&style=for-the-badge)](https://github.com/GhaniPutra/Weather-Vista/releases/latest/download/WeatherVista.apk)
-
-*Screenshots removed from README to keep file lightweight. Lihat folder `assets/images/` untuk melihat gambar preview secara lokal.*
-
-
 # 🌦️ WeatherVista — Aplikasi Cuaca (Flutter)
 
 WeatherVista adalah aplikasi cuaca ringan dan modern yang dibangun dengan **Flutter**. Aplikasi ini menampilkan informasi cuaca real-time berdasarkan lokasi GPS atau nama kota, meliputi cuaca saat ini, ringkasan per jam, dan prakiraan 7 hari. Aplikasi juga menyediakan notifikasi in-app & sistem, serta kemampuan menyimpan lokasi favorit.
