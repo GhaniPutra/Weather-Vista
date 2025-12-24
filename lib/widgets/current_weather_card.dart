@@ -6,10 +6,7 @@
 /// -----------------------------------------------------------------------------
 library;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/weather_model.dart';
 import '../screens/map_screen.dart';
@@ -37,87 +34,13 @@ class CurrentWeatherCard extends StatelessWidget {
     return Colors.white;
   }
 
-  /// Tampilkan opsi peta: buka internal WebView atau browser eksternal, atau salin koordinat.
-  Future<void> _openMapOptions(BuildContext context) async {
-    final openUrl =
-        'https://www.windy.com/?lat=${weather.latitude.toStringAsFixed(6)}&lon=${weather.longitude.toStringAsFixed(6)}&zoom=8';
-
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (bCtx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.map_outlined),
-              title: const Text('Tampilkan di Aplikasi'),
-              onTap: () {
-                Navigator.of(bCtx).pop();
-                if (!kIsWeb) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) {
-                        return MapScreen(
-                          latitude: weather.latitude,
-                          longitude: weather.longitude,
-                        );
-                      },
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(bCtx).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Peta tidak tersedia di browser, gunakan opsi Buka di Browser',
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.open_in_browser),
-              title: const Text('Buka di Browser'),
-              onTap: () async {
-                final uri = Uri.parse(openUrl);
-                Navigator.of(bCtx).pop();
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                } else {
-                  ScaffoldMessenger.of(bCtx).showSnackBar(
-                    const SnackBar(
-                      content: Text('Tidak dapat membuka Browser'),
-                    ),
-                  );
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: const Text('Salin Koordinat'),
-              onTap: () async {
-                await Clipboard.setData(
-                  ClipboardData(
-                    text: '${weather.latitude},${weather.longitude}',
-                  ),
-                );
-                Navigator.of(bCtx).pop();
-                ScaffoldMessenger.of(bCtx).showSnackBar(
-                  const SnackBar(content: Text('Koordinat disalin')),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Map options removed — tapping opens `MapScreen` directly.
 
   @override
   Widget build(BuildContext context) {
-    // GestureDetector: buka opsi peta saat kartu ditekan
+    // GestureDetector: langsung membuka `MapScreen` saat kartu ditekan
     return GestureDetector(
-      onTap: () async {
+      onTap: () {
         if ((weather.latitude == 0 && weather.longitude == 0) ||
             weather.latitude.isNaN ||
             weather.longitude.isNaN) {
@@ -126,7 +49,16 @@ class CurrentWeatherCard extends StatelessWidget {
           );
           return;
         }
-        await _openMapOptions(context);
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) {
+              return MapScreen(
+                latitude: weather.latitude,
+                longitude: weather.longitude,
+              );
+            },
+          ),
+        );
       },
       child: Container(
         width: double.infinity,
