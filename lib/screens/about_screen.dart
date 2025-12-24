@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
+/// Layar About/Tentang aplikasi: menampilkan informasi versi dan keterangan proyek.
 class AboutScreen extends StatelessWidget {
   final VoidCallback onBack;
   final bool isDark;
@@ -12,7 +13,9 @@ class AboutScreen extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final textColor = AppColors.getTextColor(brightness);
     final secondaryTextColor = AppColors.getSecondaryTextColor(brightness);
-    final cardColor = Theme.of(context).colorScheme.surface; // use theme surface
+    final cardColor = Theme.of(
+      context,
+    ).colorScheme.surface; // use theme surface
     const dividerColor = Color.fromARGB(255, 200, 200, 200);
 
     final lightGradient = const LinearGradient(
@@ -34,7 +37,10 @@ class AboutScreen extends StatelessWidget {
         decoration: BoxDecoration(gradient: grad),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 20.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -90,17 +96,29 @@ class AboutScreen extends StatelessWidget {
                           const SizedBox(height: 20),
                           Text(
                             'Aplikasi ini dikembangkan sebagai proyek implementasi untuk mata kuliah Mobile & Web Service.',
-                            style: TextStyle(fontSize: 14, height: 1.6, color: textColor),
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.6,
+                              color: textColor,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Tujuan utama dari pengembangan aplikasi ini adalah untuk mendemonstrasikan penerapan teknologi Mobile Development yang terintegrasi dengan layanan Web Service (REST API).',
-                            style: TextStyle(fontSize: 14, height: 1.6, color: textColor),
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.6,
+                              color: textColor,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Aplikasi ini mengambil data cuaca secara real-time dan menyajikannya dalam antarmuka pengguna yang responsif.',
-                            style: TextStyle(fontSize: 14, height: 1.6, color: textColor),
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.6,
+                              color: textColor,
+                            ),
                           ),
                           const SizedBox(height: 32),
                           Divider(color: dividerColor),
@@ -128,7 +146,10 @@ class AboutScreen extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   '2025',
-                                  style: TextStyle(fontSize: 13, color: secondaryTextColor),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: secondaryTextColor,
+                                  ),
                                 ),
                               ],
                             ),

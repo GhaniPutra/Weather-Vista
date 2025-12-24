@@ -53,7 +53,7 @@ class WelcomeScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'SIMPLE',
+                      'WEATHER',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF22343D),
@@ -64,7 +64,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'WEATHER APP',
+                      'VSTA',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF22343D),
@@ -107,8 +107,9 @@ class WelcomeScreen extends StatelessWidget {
                   height: 52,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          isDark ? Colors.white : const Color(0xFF22343D),
+                      backgroundColor: isDark
+                          ? Colors.white
+                          : const Color(0xFF22343D),
                       foregroundColor: isDark ? Colors.black : Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

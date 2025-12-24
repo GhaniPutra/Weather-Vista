@@ -15,6 +15,8 @@
 /// - Untuk konsistensi UI, gunakan warna dari AppColors di seluruh widget.
 /// - Jika ingin menambah tema atau warna baru, tambahkan di class ini.
 /// -----------------------------------------------------------------------------
+library;
+
 import 'package:flutter/material.dart';
 
 /// -----------------------------------------------------------------------------

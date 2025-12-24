@@ -1,8 +1,10 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
+import 'package:provider/provider.dart';
+import 'package:simple_weather/theme/app_theme.dart';
+import 'package:simple_weather/theme/theme_provider.dart';
 import 'services/notification_service.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 // screens
 import 'screens/weather_home_screen.dart';
@@ -12,104 +14,63 @@ import 'screens/settings_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/welcome_screen.dart';
 
-void main() async {
+/// Fungsi entrypoint aplikasi.
+/// Inisialisasi plugin dan provider (NotificationService, ThemeProvider) sebelum menjalankan app.
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService().init();
-  runApp(OverlaySupport.global(child: const MyApp()));
-}
-
-/// Gradient global
-class AppGradients {
-  static const light = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFFDFF6FA), Color(0xFFF6E8DA)],
-  );
-
-  static const dark = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFF0F0F0F), Color(0xFF1B1B1B)],
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
   );
 }
 
-class MyApp extends StatefulWidget {
+/// Root widget aplikasi yang menangani tema dan navigasi.
+///
+/// - Menggunakan `ThemeProvider` untuk mengontrol `themeMode`.
+/// - Membungkus `MaterialApp` dengan `OverlaySupport.global` untuk menampilkan
+///   in-app overlay (banner notifikasi).
+/// - Menyediakan `navigatorKey` global untuk navigasi yang dipicu dari luar
+///   context (digunakan pada Welcome -> Main transition).
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
 
-class _MyAppState extends State<MyApp> {
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-  bool _isDark = false;
-
-  void _toggleTheme(bool isDark) => setState(() => _isDark = isDark);
-
-  static const _lightPrimary = Color(0xFFEF6C00);
-  static const _darkPrimary = Color(0xFFFFA726);
+  // Navigator key so we can navigate from contexts outside the MaterialApp widget tree
+  static final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
-    final lightScheme = ColorScheme.fromSeed(
-      seedColor: _lightPrimary,
-      brightness: Brightness.light,
-      primary: _lightPrimary,
-      onPrimary: Colors.white,
-    );
-
-    final darkScheme = ColorScheme.fromSeed(
-      seedColor: _darkPrimary,
-      brightness: Brightness.dark,
-      primary: _darkPrimary,
-      onPrimary: Colors.black,
-    );
-
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: lightScheme,
-        scaffoldBackgroundColor: Colors.transparent,
-        textTheme: GoogleFonts.poppinsTextTheme(),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: darkScheme,
-        scaffoldBackgroundColor: Colors.transparent,
-        textTheme: GoogleFonts.poppinsTextTheme().apply(
-          bodyColor: Colors.white,
-        ),
-      ),
-      themeMode: _isDark ? ThemeMode.dark : ThemeMode.light,
-      home: WelcomeScreen(
-        onGetStarted: () {
-          _navigatorKey.currentState?.pushReplacement(
-            MaterialPageRoute(
-              builder: (_) =>
-                  MainAppScreen(isDark: _isDark, onThemeChanged: _toggleTheme),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return OverlaySupport.global(
+          child: MaterialApp(
+            navigatorKey: _navKey,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: WelcomeScreen(
+              onGetStarted: () {
+                _navKey.currentState?.pushReplacement(
+                  MaterialPageRoute(builder: (_) => const MainAppScreen()),
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
-/// ------------------------------
-/// MAIN APP SCREEN
-/// ------------------------------
+/// Layar utama aplikasi setelah welcome.
+/// Menyusun halaman Home, Notification, dan Settings serta menampilkan
+/// bottom navigation untuk berpindah antar halaman.
+/// Properti `showAbout` digunakan untuk menampilkan layar About sebagai overlay.
 class MainAppScreen extends StatefulWidget {
-  final bool isDark;
-  final ValueChanged<bool> onThemeChanged;
-
-  const MainAppScreen({
-    required this.isDark,
-    required this.onThemeChanged,
-    super.key,
-  });
+  const MainAppScreen({super.key});
 
   @override
   State<MainAppScreen> createState() => _MainAppScreenState();
@@ -140,86 +101,84 @@ class _MainAppScreenState extends State<MainAppScreen> {
         location: _selectedLocation,
       ),
       SettingsScreen(
-        isDark: widget.isDark,
-        onThemeChanged: widget.onThemeChanged,
         onBack: () => setState(() => _index = 0),
         onAboutTap: _openAbout,
       ),
     ];
 
+    // Scaffold utama dengan background gradient dan bottom navigation
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
-                gradient: Theme.of(context).brightness == Brightness.dark
-                    ? AppGradients.dark
-                    : AppGradients.light,
-              ),
+              color: Theme.of(context).scaffoldBackgroundColor,
             ),
           ),
-
           Positioned.fill(
             child: showAbout
-                ? AboutScreen(onBack: _closeAbout, isDark: widget.isDark)
+                ? AboutScreen(
+                    onBack: _closeAbout,
+                    isDark: Theme.of(context).brightness == Brightness.dark,
+                  )
                 : pages[_index],
           ),
-
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF202020)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha((0.12 * 255).round()),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _NavItem(
-                    index: 0,
-                    current: _index,
-                    label: "Home",
-                    icon: Icons.home,
-                    onTap: (i) => setState(() => _index = i),
-                  ),
-                  _NavItem(
-                    index: 1,
-                    current: _index,
-                    label: "Notification",
-                    icon: Icons.notifications,
-                    onTap: (i) => setState(() => _index = i),
-                  ),
-                  _NavItem(
-                    index: 2,
-                    current: _index,
-                    label: "Settings",
-                    icon: Icons.settings,
-                    onTap: (i) => setState(() => _index = i),
-                  ),
-                ],
+          if (!showAbout)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Container(
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF202020)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha((0.12 * 255).round()),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _NavItem(
+                      index: 0,
+                      current: _index,
+                      label: "Home",
+                      icon: Icons.home,
+                      onTap: (i) => setState(() => _index = i),
+                    ),
+                    _NavItem(
+                      index: 1,
+                      current: _index,
+                      label: "Notification",
+                      icon: Icons.notifications,
+                      onTap: (i) => setState(() => _index = i),
+                    ),
+                    _NavItem(
+                      index: 2,
+                      current: _index,
+                      label: "Settings",
+                      icon: Icons.settings,
+                      onTap: (i) => setState(() => _index = i),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 }
 
+/// Item untuk navigasi bottom bar (ikon + label)
 class _NavItem extends StatelessWidget {
   final int index;
   final int current;
@@ -233,7 +192,6 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
-    super.key,
   });
 
   @override
@@ -259,8 +217,8 @@ class _NavItem extends StatelessWidget {
               color: selected
                   ? Theme.of(context).colorScheme.onPrimary
                   : (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[400]
-                        : Colors.grey[600]),
+                      ? Colors.grey[400]
+                      : Colors.grey[600]),
             ),
           ),
           const SizedBox(height: 6),
@@ -271,8 +229,8 @@ class _NavItem extends StatelessWidget {
               color: selected
                   ? Theme.of(context).colorScheme.primary
                   : (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[400]
-                        : Colors.grey[600]),
+                      ? Colors.grey[400]
+                      : Colors.grey[600]),
             ),
           ),
         ],

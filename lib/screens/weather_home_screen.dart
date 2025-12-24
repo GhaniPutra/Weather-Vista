@@ -10,8 +10,12 @@ import '../widgets/hourly_weather_card.dart';
 import '../widgets/seven_day_row.dart';
 import '../services/weather_service.dart';
 import '../models/weather_model.dart';
+import '../models/location_error.dart';
+import '../models/location_item.dart';
 import '../services/notification_service.dart';
 
+/// Layar utama aplikasi.
+/// - Menampilkan cuaca saat ini, kontrol lokasi (GPS / pilih kota), dan ringkasan harian.
 class WeatherHomeScreen extends StatefulWidget {
   final ValueChanged<WeatherModel>? onWeatherChanged;
   final ValueChanged<String>? onLocationChanged;
@@ -52,6 +56,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
     _loadPreferencesAndInit();
   }
 
+  /// Muat preferensi pengguna (favorit, preferensi GPS) dan inisialisasi data cuaca.
   Future<void> _loadPreferencesAndInit() async {
     final prefs = await SharedPreferences.getInstance();
     final useGps = prefs.getBool(_prefUseGps) ?? true;
@@ -77,6 +82,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
     }
   }
 
+  /// Tambah/hapus kota pada daftar favorit pengguna dan simpan ke SharedPreferences.
   Future<void> _toggleFavorite(String city) async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -89,6 +95,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
     await prefs.setStringList('favorites', _favorites);
   }
 
+  /// Inisialisasi pengambilan data cuaca berdasarkan lokasi GPS saat ini.
   Future<void> _initWeather() async {
     try {
       final pos = await _determinePosition();
@@ -157,6 +164,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
     }
   }
 
+  /// Ganti lokasi secara manual (kota) dan hentikan update GPS hingga user mengaktifkannya kembali.
   Future<void> _changeLocation(String city) async {
     // When user manually selects a city, ignore any pending GPS updates
     _ignoreGpsUpdates = true;
@@ -178,6 +186,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
     });
   }
 
+  /// Aktifkan kembali tracking GPS dan ambil data cuaca berdasarkan koordinat terkini.
   void _useGPSLocation() {
     // re-enable GPS updates and (re)start tracking
     _ignoreGpsUpdates = false;
@@ -190,6 +199,243 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
       await prefs.setBool(_prefUseGps, true);
     });
     _initWeather();
+  }
+
+  /// Membuat daftar item lokasi untuk dialog pemilihan kota
+  /// Including "Current Location" as the first item
+  List<LocationItem> _buildLocationItems(ThemeData theme) {
+    final List<LocationItem> items = [];
+    
+    // Add Current Location as first item
+    final currentLocationItem = LocationItem.currentLocation(
+      cityName: _useGPS ? _currentLocation : null,
+      isGpsAvailable: true, // You can add logic to check GPS availability
+    );
+    items.add(currentLocationItem);
+    
+    // Add popular cities
+    const popularCities = [
+      'Jakarta',
+      'Bandung',
+      'Surabaya',
+      'Yogyakarta',
+      'Medan',
+      'Makassar',
+      'Denpasar',
+      'Palembang',
+    ];
+    
+    for (final city in popularCities) {
+      items.add(LocationItem.city(city));
+    }
+    
+    return items;
+  }
+
+  /// Build a user-friendly error widget based on error type
+  Widget _buildErrorWidget(dynamic error) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final brightness = Theme.of(context).brightness;
+    
+    final isLocationNotFound = LocationErrorHandler.isLocationNotFound(error);
+    final errorTitle = LocationErrorHandler.getErrorTitle(error);
+    final errorMessage = LocationErrorHandler.getErrorMessage(error);
+    final suggestions = LocationErrorHandler.getRecoverySuggestions(error);
+    
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Error icon
+            Icon(
+              isLocationNotFound ? Icons.location_off : Icons.error_outline,
+              size: 64,
+              color: colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            
+            // Error title
+            Text(
+              errorTitle,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.getTextColor(brightness),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            
+            // Error message
+            Text(
+              errorMessage,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.getSecondaryTextColor(brightness),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            
+            // Action buttons based on error type
+            _buildActionButtons(error, colorScheme),
+            
+            const SizedBox(height: 24),
+            
+            // Suggestions section
+            if (suggestions.isNotEmpty)
+              _buildSuggestionsSection(suggestions, colorScheme, brightness),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build action buttons based on error type
+  Widget _buildActionButtons(dynamic error, ColorScheme colorScheme) {
+    if (LocationErrorHandler.isLocationNotFound(error)) {
+      return Column(
+        children: [
+          // Retry with same location
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() {
+                _weatherFuture = _weatherService.fetchWeatherWithRetrofit(_currentLocation);
+              });
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Coba Lagi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Try different location
+          OutlinedButton.icon(
+            onPressed: () => _showCitySelectionDialog(context),
+            icon: const Icon(Icons.search),
+            label: const Text('Cari Lokasi Lain'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: colorScheme.primary,
+              side: BorderSide(color: colorScheme.primary),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Use GPS
+          if (!_useGPS)
+            TextButton.icon(
+              onPressed: _useGPSLocation,
+              icon: const Icon(Icons.my_location),
+              label: const Text('Gunakan GPS'),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.primary,
+              ),
+            ),
+        ],
+      );
+    } else if (error is NetworkException) {
+      return Column(
+        children: [
+          // Retry for network errors
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() {
+                _weatherFuture = _weatherService.fetchWeatherWithRetrofit(_currentLocation);
+              });
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Coba Lagi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Use GPS if available
+          if (!_useGPS)
+            TextButton.icon(
+              onPressed: _useGPSLocation,
+              icon: const Icon(Icons.my_location),
+              label: const Text('Gunakan GPS'),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.primary,
+              ),
+            ),
+        ],
+      );
+    } else {
+      // Generic retry button
+      return ElevatedButton.icon(
+        onPressed: () {
+          setState(() {
+            _weatherFuture = _weatherService.fetchWeatherWithRetrofit(_currentLocation);
+          });
+        },
+        icon: const Icon(Icons.refresh),
+        label: const Text('Coba Lagi'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+        ),
+      );
+    }
+  }
+
+  /// Build suggestions section
+  Widget _buildSuggestionsSection(List<String> suggestions, ColorScheme colorScheme, Brightness brightness) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface.withAlpha((0.08 * 255).round()),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withAlpha((0.2 * 255).round()),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tips:',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: AppColors.getSecondaryTextColor(brightness),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...suggestions.take(3).map((suggestion) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.circle,
+                  size: 6,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    suggestion,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.getSecondaryTextColor(brightness),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
   }
 
   void _showCitySelectionDialog(BuildContext context) {
@@ -246,48 +492,73 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children:
-                    [
-                      'Jakarta',
-                      'Bandung',
-                      'Surabaya',
-                      'Yogyakarta',
-                      'Medan',
-                      'Makassar',
-                      'Denpasar',
-                      'Palembang',
-                    ].map((city) {
-                      return GestureDetector(
-                        onLongPress: () async {
-                          await _toggleFavorite(city);
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _favorites.contains(city)
-                                    ? 'Ditambahkan ke favorit: $city'
-                                    : 'Dihapus dari favorit: $city',
+                children: _buildLocationItems(theme).map((locationItem) {
+                  return GestureDetector(
+                    onLongPress: locationItem.isCurrentLocation 
+                        ? null 
+                        : () async {
+                            await _toggleFavorite(locationItem.name);
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  _favorites.contains(locationItem.name)
+                                      ? 'Ditambahkan ke favorit: ${locationItem.name}'
+                                      : 'Dihapus dari favorit: ${locationItem.name}',
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            shape: const StadiumBorder(),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
+                            );
+                          },
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: locationItem.isCurrentLocation 
+                            ? theme.colorScheme.secondary
+                            : theme.colorScheme.primary,
+                        foregroundColor: locationItem.isCurrentLocation 
+                            ? theme.colorScheme.onSecondary
+                            : theme.colorScheme.onPrimary,
+                        shape: const StadiumBorder(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      onPressed: locationItem.isClickable 
+                          ? () {
+                              if (locationItem.isCurrentLocation) {
+                                Navigator.of(dialogContext).pop();
+                                _useGPSLocation();
+                              } else {
+                                _changeLocation(locationItem.name);
+                                Navigator.of(dialogContext).pop();
+                              }
+                            }
+                          : null,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            locationItem.displayName,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          onPressed: () {
-                            _changeLocation(city);
-                            Navigator.of(dialogContext).pop();
-                          },
-                          child: Text(city),
-                        ),
-                      );
-                    }).toList(),
+                          if (locationItem.displaySubtitle != null)
+                            Text(
+                              locationItem.displaySubtitle!,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.normal,
+                                color: (locationItem.isCurrentLocation 
+                                    ? theme.colorScheme.onSecondary
+                                    : theme.colorScheme.onPrimary).withOpacity(0.8),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ],
           ),
@@ -309,7 +580,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
                 foregroundColor: theme.colorScheme.onSurface,
               ),
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Batal'),
+              child: const Text('Tutup'),
             ),
           ],
         );
@@ -436,12 +707,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
                         ),
                       );
                     } else if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Error: ${snapshot.error}',
-                          style: TextStyle(color: colorScheme.onSurface),
-                        ),
-                      );
+                      return _buildErrorWidget(snapshot.error!);
                     } else if (snapshot.hasData) {
                       final weather = snapshot.data!;
                       // notify parent only when weather has changed
@@ -457,7 +723,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
                         // mark as handled immediately to avoid duplicate scheduling
                         _lastNotifiedWeather = weather;
 
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
                           if (!mounted) return;
                           widget.onWeatherChanged?.call(weather);
                           // if using GPS, update location display using weather.locationName
@@ -469,9 +735,11 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
                           }
                           // show an in-app and system weather notification
                           // (WhatsApp-like banner + optional system notification)
-                          NotificationService().showWeatherNotification(
-                            weather,
-                          );
+                          if (mounted) {
+                            NotificationService().showWeatherNotification(
+                              weather,
+                            );
+                          }
                         });
                       }
                       return Stack(
@@ -518,6 +786,7 @@ class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
                                             height: 36,
                                             child: ListView.separated(
                                               scrollDirection: Axis.horizontal,
+                                              shrinkWrap: true,
                                               itemCount: _favorites.length,
                                               separatorBuilder: (_, __) =>
                                                   const SizedBox(width: 8),

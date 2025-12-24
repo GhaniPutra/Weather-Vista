@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../models/weather_model.dart';
 import '../services/notification_service.dart';
 
+/// Layar notifikasi yang menampilkan ringkasan cuaca singkat dan opsi menampilkan notifikasi.
 class NotificationScreen extends StatelessWidget {
   final VoidCallback onBack;
   final WeatherModel? weather;

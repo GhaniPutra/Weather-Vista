@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Layar peta Windy yang menampilkan lokasi berdasarkan koordinat (WebView pada mobile).
 class MapScreen extends StatefulWidget {
   final double latitude;
   final double longitude;
@@ -66,10 +67,12 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  /// Bangun URL Windy dengan koordinat dan tingkat zoom (digunakan untuk WebView / buka eksternal)
   String _buildWindyUrl(double lat, double lon, {int zoom = 8}) {
     return 'https://www.windy.com/?lat=${lat.toStringAsFixed(6)}&lon=${lon.toStringAsFixed(6)}&zoom=$zoom';
   }
 
+  /// Buka peta Windy di browser eksternal menggunakan `url_launcher`.
   Future<void> _openExternally() async {
     final url = _buildWindyUrl(widget.latitude, widget.longitude);
     final uri = Uri.parse(url);

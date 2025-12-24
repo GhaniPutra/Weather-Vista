@@ -4,6 +4,8 @@
 /// Widget sederhana untuk menampilkan cuaca saat ini.
 /// Diperlukan: `WeatherModel`, dan `MapScreen` untuk tombol peta.
 /// -----------------------------------------------------------------------------
+library;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,38 +13,31 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/weather_model.dart';
 import '../screens/map_screen.dart';
+import '../utils/weather_conditions.dart';
 
+/// Widget untuk menampilkan informasi cuaca utama (suhu, lokasi, kondisi).
+/// - Menampilkan suhu besar, ikon kondisi, lokasi, serta statistik kecil (humidity, wind).
 class CurrentWeatherCard extends StatelessWidget {
   final WeatherModel weather;
 
   const CurrentWeatherCard({super.key, required this.weather});
 
+  /// Pilih ikon cuaca yang sesuai berdasarkan teks kondisi.
   IconData _getWeatherIcon() {
-    final condition = weather.conditionText.toLowerCase();
-    if (condition.contains('rain') || condition.contains('drizzle')) {
-      return Icons.umbrella;
-    }
-    if (condition.contains('cloud') || condition.contains('overcast')) {
-      return Icons.cloud;
-    }
-    return Icons.wb_sunny;
+    return getWeatherCondition(weather.conditionText).icon;
   }
 
+  /// Pilih gradient warna latar berdasarkan kondisi cuaca.
   LinearGradient _getWeatherGradient() {
-    final temp = weather.tempC;
-    if (temp < 15) {
-      return const LinearGradient(
-        colors: [Color(0xFF56CCF2), Color(0xFF2F80ED)],
-      );
-    }
-    if (temp < 25) {
-      return const LinearGradient(
-        colors: [Color(0xFF43C6AC), Color(0xFF2FA59A)],
-      );
-    }
-    return const LinearGradient(colors: [Color(0xFFFFA751), Color(0xFFFFE259)]);
+    return getWeatherCondition(weather.conditionText).gradient;
   }
 
+  /// Main weather icon is always white (#FFFFFF) regardless of background
+  Color _getIconColorForGradient() {
+    return Colors.white;
+  }
+
+  /// Tampilkan opsi peta: buka internal WebView atau browser eksternal, atau salin koordinat.
   Future<void> _openMapOptions(BuildContext context) async {
     final openUrl =
         'https://www.windy.com/?lat=${weather.latitude.toStringAsFixed(6)}&lon=${weather.longitude.toStringAsFixed(6)}&zoom=8';
@@ -70,7 +65,7 @@ class CurrentWeatherCard extends StatelessWidget {
                     ),
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(bCtx).showSnackBar(
                     const SnackBar(
                       content: Text(
                         'Peta tidak tersedia di browser, gunakan opsi Buka di Browser',
@@ -89,7 +84,7 @@ class CurrentWeatherCard extends StatelessWidget {
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(bCtx).showSnackBar(
                     const SnackBar(
                       content: Text('Tidak dapat membuka Browser'),
                     ),
@@ -107,7 +102,7 @@ class CurrentWeatherCard extends StatelessWidget {
                   ),
                 );
                 Navigator.of(bCtx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(bCtx).showSnackBar(
                   const SnackBar(content: Text('Koordinat disalin')),
                 );
               },
@@ -120,6 +115,7 @@ class CurrentWeatherCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // GestureDetector: buka opsi peta saat kartu ditekan
     return GestureDetector(
       onTap: () async {
         if ((weather.latitude == 0 && weather.longitude == 0) ||
@@ -173,7 +169,7 @@ class CurrentWeatherCard extends StatelessWidget {
                   children: [
                     Icon(
                       _getWeatherIcon(),
-                      color: Colors.white.withAlpha((0.9 * 255).round()),
+                      color: _getIconColorForGradient(),
                       size: 36,
                     ),
                     const SizedBox(height: 4),
@@ -217,6 +213,7 @@ class CurrentWeatherCard extends StatelessWidget {
   }
 }
 
+/// Kecilkan chip statistik (ikon + angka + sublabel) yang dipakai di bar bawah.
 Widget _statChip({
   required IconData icon,
   required String label,
@@ -269,6 +266,7 @@ Widget _statChip({
   );
 }
 
+/// Mini chart sederhana untuk menampilkan tren suhu per jam (kompak).
 class _CompactHourlyChart extends StatelessWidget {
   final List<HourWeather> hourly;
 
@@ -290,6 +288,7 @@ class _CompactHourlyChart extends StatelessWidget {
   }
 }
 
+/// Custom painter yang menggambar garis kecil untuk mini-chart suhu.
 class _CompactChartPainter extends CustomPainter {
   final List<double> temps;
   final Color color;

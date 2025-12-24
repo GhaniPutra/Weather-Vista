@@ -3,8 +3,10 @@ import 'package:overlay_support/overlay_support.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/weather_model.dart';
 
-/// Simple NotificationService that supports an in-app WhatsApp-like banner
-/// and optional system notifications via flutter_local_notifications.
+/// NotificationService sederhana untuk menampilkan notifikasi aplikasi.
+/// Fitur:
+/// - Banner in-app (overlay) seperti pesan singkat
+/// - Notifikasi sistem opsional via `flutter_local_notifications`
 class NotificationService {
   NotificationService._private();
   static final NotificationService _instance = NotificationService._private();
@@ -13,28 +15,46 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _local =
       FlutterLocalNotificationsPlugin();
 
+  /// Inisialisasi plugin notifikasi sistem.
+  /// Harus dipanggil saat aplikasi mulai (mis. di `main`) untuk menyiapkan
+  /// channel dan pengaturan Android.
   Future<void> init() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const settings = InitializationSettings(android: android);
     await _local.initialize(settings);
   }
 
+  /// Tampilkan notifikasi sistem (status bar).
+  /// Jika plugin tidak tersedia (mis. di lingkungan test), operasi ini
+  /// akan ditangani secara defensif dan tidak melempar exception.
   Future<void> showSystemNotification({
     required int id,
     required String title,
     required String body,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
-      'weather_chan',
-      'Weather Notifications',
-      channelDescription: 'Weather alerts',
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-    );
-    const platform = NotificationDetails(android: androidDetails);
-    await _local.show(id, title, body, platform);
+    try {
+      const androidDetails = AndroidNotificationDetails(
+        'weather_chan',
+        'Weather Notifications',
+        channelDescription: 'Weather alerts',
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+      );
+      const platform = NotificationDetails(android: androidDetails);
+      await _local.show(id, title, body, platform);
+    } catch (e) {
+      // Di lingkungan test atau bila plugin belum terinisialisasi,
+      // lewati pemanggilan notifikasi sistem agar tes widget tidak gagal.
+      debugPrint('Skipping system notification (not available): $e');
+    }
   }
 
+  /// Tampilkan banner notifikasi in-app (overlay) di bagian atas layar.
+  /// Parameter:
+  /// - `title` dan `body`: teks yang ditampilkan.
+  /// - `leading`: widget opsional di sebelah kiri (mis. ikon).
+  /// - `duration`: lama tampilan banner.
+  /// - `onTap`: callback saat banner diketuk.
   void showInAppNotification({
     required String title,
     required String body,
@@ -110,12 +130,14 @@ class NotificationService {
         );
       }, duration: duration);
     } catch (e) {
-      // OverlaySupport not initialized (e.g., in tests) — ignore so tests don't fail
+      // OverlaySupport belum terinisialisasi (mis. saat menjalankan tes) —
+      // lewati pemanggilan agar tes tidak gagal.
       debugPrint('Overlay not initialized, skipping in-app notification: $e');
     }
   }
 
-  /// Convenience: show weather as both in-app banner and system notification
+  /// Membantu menampilkan notifikasi cuaca baik sebagai banner in-app
+  /// maupun notifikasi sistem. Digunakan saat informasi cuaca baru tersedia.
   Future<void> showWeatherNotification(WeatherModel weather) async {
     final title = 'Cuaca di ${weather.locationName}';
     final body =

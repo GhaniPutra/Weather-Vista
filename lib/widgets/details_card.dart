@@ -12,14 +12,21 @@
 /// - Widget ini digunakan di halaman utama untuk menampilkan detail cuaca harian.
 /// - Untuk menambah detail lain, tambahkan properti dan tampilan di bagian children.
 /// -----------------------------------------------------------------------------
+library;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/weather_model.dart';
 
+/// Widget kartu yang menampilkan detail cuaca harian seperti sunrise, sunset, min/max, kelembapan, dan lain-lain.
 class DetailsCard extends StatelessWidget {
   final WeatherModel weather;
 
+  /// Buat instance `DetailsCard` dengan data cuaca harian.
+  ///
+  /// Parameter:
+  /// - `weather`: model cuaca yang menyediakan semua nilai detail yang akan ditampilkan.
   const DetailsCard({super.key, required this.weather});
 
   @override
@@ -176,6 +183,13 @@ class _DetailItem extends StatelessWidget {
   /// Brightness untuk menentukan warna teks yang sesuai
   final Brightness brightness;
 
+  /// Buat item detail untuk ditampilkan dalam `DetailsCard`.
+  ///
+  /// Parameter:
+  /// - `icon`: ikon yang merepresentasikan jenis detail.
+  /// - `value`: nilai utama (mis. "28°C").
+  /// - `label`: label penjelas (mis. "Feels Like").
+  /// - `brightness`: brightness tema untuk menentukan warna teks.
   const _DetailItem({
     required this.icon,
     required this.value,

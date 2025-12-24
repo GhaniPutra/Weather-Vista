@@ -16,7 +16,7 @@ void main() {
   ) async {
     // Instead of relying on navigation (which uses a navigator key), pump MainAppScreen directly
     await tester.pumpWidget(
-      MaterialApp(home: MainAppScreen(isDark: false, onThemeChanged: (_) {})),
+      const MaterialApp(home: MainAppScreen()),
     );
     await tester.pump();
 
