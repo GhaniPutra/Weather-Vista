@@ -26,7 +26,7 @@ WeatherVista adalah aplikasi cuaca ringan dan modern yang dibangun dengan **Flut
 
 ## ▶️ Download Aplikasi
 
-- **Link langsung (one-click):** [Download APK (Latest release)](https://github.com/GhaniPutra/Weather-Vista/releases/download/v1.0.0/Weather_Vista.apk)
+- **Link langsung (one-click):** [Download APK (Latest release)](https://github.com/GhaniPutra/Weather-Vista/releases/download/v1.0.0/Weather.Vista.apk)
 
 > Pastikan file APK di-attach pada release dengan nama `WeatherVista.apk` agar tautan di atas berfungsi.
 
